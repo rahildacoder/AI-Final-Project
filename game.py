@@ -1,6 +1,7 @@
 import math
 import random
 import numpy as np
+import time
 
 # number of rows on the board
 ROWS = 6
@@ -12,10 +13,16 @@ PLAYER = 0
 AI = 1
 # empty spot on board
 EMPTY = 0
+# represents the player's piece on the board
 PLAYER_PIECE = 1
+# represents the AI's piece on the board
 AI_PIECE = 2
 # number of pieces in a row for a win
 WINDOW_LENGTH = 4
+# the number of nodes traversed in a move
+NODES = 0
+# the depth for the minimax
+DEPTH = 10
 
 # creates the initial board
 def createBoard():
@@ -135,6 +142,8 @@ def minimax(board, depth, alpha, beta, maxPlayer):
     valid = getValidLocations(board)
     terminal = isTerminal(board)
     if depth == 0 or terminal:
+        global NODES
+        NODES += 1
         if terminal:
             if win(board, AI_PIECE):
                 return (None, 10000000000000)
@@ -149,6 +158,7 @@ def minimax(board, depth, alpha, beta, maxPlayer):
         currScore = -math.inf
         bestCol = random.choice(valid)
         for c in valid:
+            NODES += 1
             r = nextOpenRow(board, c)
             boardCopy = board.copy()
             drop(boardCopy, r, c, AI_PIECE)
@@ -165,6 +175,7 @@ def minimax(board, depth, alpha, beta, maxPlayer):
         currScore = math.inf
         bestCol = random.choice(valid)
         for c in valid:
+            NODES += 1
             r = nextOpenRow(board, c)
             boardCopy = board.copy()
             drop(boardCopy, r, c, PLAYER_PIECE)
@@ -176,7 +187,6 @@ def minimax(board, depth, alpha, beta, maxPlayer):
             if alpha >= beta:
                 break
         return bestCol, currScore
-    
 
 # determines all valid columns on a board
 def getValidLocations(board):
@@ -214,8 +224,16 @@ while not gameOver:
 
     # AI's turn
     if turn == AI:
+        NODES = 0
+        col = 0
+        minimaxScore = 0
         # col = bestMove(board, AI_PIECE)
-        col, minimaxScore = minimax(board, 4, -math.inf, math.inf, True)
+        start = time.time()
+        for i in range(DEPTH):
+            end = time.time()
+            if (end - start < 5):
+                col, minimaxScore = minimax(board, i, -math.inf, math.inf, True)
+        print("Total nodes searched: " + str(NODES))
 
         # processes a turn 
         if validLocation(board, col):
