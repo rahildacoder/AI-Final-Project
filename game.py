@@ -1,3 +1,4 @@
+import math
 import random
 import numpy as np
 
@@ -65,9 +66,38 @@ def win(board, piece):
             if board[r][c] == piece and board[r - 1][c + 1] == piece and board[r - 2][c + 2] == piece and board[r - 3][c + 3] == piece:
                 return True
 
+# evaluates a score based on the number of pieces in a given window
+def windowEval(window, piece):
+    score = 0
+    opp_Piece = PLAYER_PIECE
+    if piece == PLAYER_PIECE:
+        opp_Piece = AI_PIECE
+    
+    # checks for four pieces in a row
+    if window.count(piece) == 4:
+        score += 100
+    # checks for three pieces with an available spot for a third
+    elif window.count(piece) == 3 and window.count(EMPTY) == 1:
+        score += 5
+    # checks for two pieces with available spots for two more
+    elif window.count(piece) == 2 and window.count(EMPTY) == 2:
+        score += 2
+
+    # checks if opponent has three pieces in a row with a spot for another
+    if window.count(opp_Piece) == 3 and window.count(EMPTY) == 1:
+        score -= 4
+    
+    return score
+
 # heuristic function
 def scorePos(board, piece):
     score = 0
+
+    # center column score
+    centerArr = [int(i) for i in list(board[:, COLUMNS//2])]
+    centerCount = centerArr.count(piece)
+    score += centerCount * 3
+
     # horizontal score
     for r in range(ROWS):
         rowArr = [int(i) for i in list(board[r, :])]
@@ -96,28 +126,57 @@ def scorePos(board, piece):
                 
     return score
 
-# evaluates a score based on the number of pieces in a given window
-def windowEval(window, piece):
-    score = 0
-    opp_Piece = PLAYER_PIECE
-    if piece == PLAYER_PIECE:
-        opp_Piece = AI_PIECE
-    
-    # checks for four pieces in a row
-    if window.count(piece) == 4:
-        score += 100
-    # checks for three pieces with an available spot for a third
-    elif window.count(piece) == 3 and window.count(EMPTY) == 1:
-        score += 10
-    # checks for two pieces with available spots for two more
-    elif window.count(piece) == 2 and window.count(EMPTY) == 2:
-        score += 5
+# determines whether a certain move is terminal
+def isTerminal(board):
+    return win(board, PLAYER_PIECE) or win(board, AI_PIECE) or len(getValidLocations(board)) == 0
 
-    # checks if opponent has three pieces in a row with a spot for another
-    if window.count(opp_Piece) == 3 and window.count(EMPTY) == 1:
-        score -= 80
+# minimax function
+def minimax(board, depth, alpha, beta, maxPlayer):
+    valid = getValidLocations(board)
+    terminal = isTerminal(board)
+    if depth == 0 or terminal:
+        if terminal:
+            if win(board, AI_PIECE):
+                return (None, 10000000000000)
+            elif win(board, PLAYER_PIECE):
+                return (None, -10000000000000)
+            else:
+                # no valid moves left, game over
+                return (None, 0) 
+        else: 
+            return (None, scorePos(board, AI_PIECE))
+    if maxPlayer:
+        currScore = -math.inf
+        bestCol = random.choice(valid)
+        for c in valid:
+            r = nextOpenRow(board, c)
+            boardCopy = board.copy()
+            drop(boardCopy, r, c, AI_PIECE)
+            newScore = minimax(boardCopy, depth - 1, alpha, beta, False)[1]
+            if newScore > currScore:
+                currScore = newScore
+                bestCol = c
+            alpha = max(alpha, currScore)
+            if alpha >= beta:
+                break
+        return bestCol, currScore
     
-    return score
+    else:
+        currScore = math.inf
+        bestCol = random.choice(valid)
+        for c in valid:
+            r = nextOpenRow(board, c)
+            boardCopy = board.copy()
+            drop(boardCopy, r, c, PLAYER_PIECE)
+            newScore = minimax(boardCopy, depth - 1, alpha, beta, True)[1]
+            if newScore < currScore:
+                currScore = newScore
+                bestCol = c
+            beta = min(beta, currScore)
+            if alpha >= beta:
+                break
+        return bestCol, currScore
+    
 
 # determines all valid columns on a board
 def getValidLocations(board):
@@ -126,22 +185,6 @@ def getValidLocations(board):
         if validLocation(board, c):
             valid.append(c)
     return valid
-
-# determines the best move based on heuristic functions
-def bestMove(board, piece):
-    valid = getValidLocations(board)
-    bestScore = -10000
-    bestCol = random.choice(valid)
-    for c in valid:
-        r = nextOpenRow(board, c)
-        tempBoard = board.copy()
-        drop(tempBoard, r, c, piece)
-        curr_score = scorePos(tempBoard, piece)
-        if curr_score > bestScore:
-            bestScore = curr_score
-            bestCol = c
-    
-    return bestCol
 
 board = createBoard()
 gameOver = False
@@ -171,7 +214,8 @@ while not gameOver:
 
     # AI's turn
     if turn == AI:
-        col = bestMove(board, AI_PIECE)
+        # col = bestMove(board, AI_PIECE)
+        col, minimaxScore = minimax(board, 4, -math.inf, math.inf, True)
 
         # processes a turn 
         if validLocation(board, col):
