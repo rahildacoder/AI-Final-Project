@@ -198,6 +198,24 @@ def getValidColumns(board):
             valid.append(c)
     return valid
 
+# determines the best move based on heuristic functions
+def moveSelect(board, piece):
+    valid = getValidColumns(board)
+    bestScore = -10000
+    bestCol = random.choice(valid)
+    for c in valid:
+        global NODES
+        NODES += 1
+        r = nextOpenRow(board, c)
+        boardCopy = board.copy()
+        drop(boardCopy, r, c, piece)
+        curr_score = scorePos(boardCopy, piece)
+        if curr_score > bestScore:
+            bestScore = curr_score
+            bestCol = c
+
+    return bestCol
+
 # Node class for MCTS
 class Node:
     # Class initialization
@@ -455,20 +473,23 @@ while not gameOver:
         # uncomment below lines to play with minimax
 
         # timer start
-        start = time.time()
-        # iterates depth until time limit passes
-        for i in range(DEPTH):
-            end = time.time()
-            if (end - start < TIME):
-                col, minimaxScore = minimax(board, i, -math.inf, math.inf, True)
-                maxDepth = i
-        print("Max depth: " + str(maxDepth))
+        # start = time.time()
+        # # iterates depth until time limit passes
+        # for i in range(DEPTH):
+        #     end = time.time()
+        #     if (end - start < TIME):
+        #         col, minimaxScore = minimax(board, i, -math.inf, math.inf, True)
+        #         maxDepth = i
+        # print("Max depth: " + str(maxDepth))
         
         # comment out below lines to play with minimax
 
         # initialize root node
-        # root = Node(None, board, AI)
-        # col = monteCarlo(root)
+        root = Node(None, board, AI)
+        col = monteCarlo(root)
+
+        # uncomment this line to play with the basic AI agent
+        # col = moveSelect(board, AI_PIECE)
 
         print("Total nodes searched: " + str(NODES))
 
