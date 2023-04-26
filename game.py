@@ -98,7 +98,7 @@ def windowEval(window, piece):
     
     return score
 
-# heuristic function
+# heuristic function for minimax
 def scorePos(board, piece):
     score = 0
 
@@ -200,7 +200,6 @@ def getValidColumns(board):
 
 # Node class for MCTS
 class Node:
-
     # Class initialization
     def __init__(self, parent, board, turn):
         # Parent node
@@ -412,9 +411,11 @@ def bestMove(node):
             if best.board[r][c] != node.board[r][c]:
                 return c
 
+# create initial board
 board = createBoard()
-gameOver = False
+# random first turn
 turn = random.randint(PLAYER, AI)
+gameOver = False
 
 # game loop
 while not gameOver:
@@ -422,7 +423,7 @@ while not gameOver:
     if turn == PLAYER:
         printBoard(board)
         # player inputs column
-        col = int(input("Player 1 Make your Selection (0-6):"))
+        col = int(input("Make your Selection (0-6):"))
 
         # processes a turn
         if validColumn(board, col):
@@ -436,7 +437,7 @@ while not gameOver:
             # processes a winning move
             if win(board, PLAYER_PIECE):
                 printBoard(board)
-                print("Player 1 GOAT status achieved. Respect.")
+                print("GOAT status achieved. Respect.")
                 gameOver = True
                 break
 
@@ -451,19 +452,24 @@ while not gameOver:
         # max depth explored in a turn
         maxDepth = 0
 
-        # # timer start
-        # start = time.time()
-        # # iterates depth until time limit passes
-        # for i in range(DEPTH):
-        #     end = time.time()
-        #     if (end - start < TIME):
-        #         col, minimaxScore = minimax(board, i, -math.inf, math.inf, True)
-        #         maxDepth = i
-        # print("Max depth: " + str(maxDepth))
+        # uncomment below lines to play with minimax
+
+        # timer start
+        start = time.time()
+        # iterates depth until time limit passes
+        for i in range(DEPTH):
+            end = time.time()
+            if (end - start < TIME):
+                col, minimaxScore = minimax(board, i, -math.inf, math.inf, True)
+                maxDepth = i
+        print("Max depth: " + str(maxDepth))
         
-        # initialiaze root node
-        root = Node(None, board, AI)
-        col = monteCarlo(root)
+        # comment out below lines to play with minimax
+
+        # initialize root node
+        # root = Node(None, board, AI)
+        # col = monteCarlo(root)
+
         print("Total nodes searched: " + str(NODES))
 
         # processes a turn 
@@ -478,7 +484,7 @@ while not gameOver:
             # processes a winning move
             if win(board, AI_PIECE):
                 printBoard(board)
-                print("Player 2 GOAT status achieved. Respect.")
+                print("You lost to the AI :( Better luck next time!)")
                 gameOver = True
                 break
         
